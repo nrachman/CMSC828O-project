@@ -1,14 +1,29 @@
+---
+title: "processing"
+author: "Nicholas Rachmaninoff"
+date: "10/4/2018"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = normalizePath("../bm_GEO/"))
+```
+
+```{r}
 #==================
+suppressPackageStartupMessages({
 library(data.table)
 library(GEOquery)
 library(dplyr)
+})
 #==================
 #config
 #==================
 #output directory
-project.dir <- "/hpcdata/sg/sg_data/users/rachmaninoffn2/CMSC828O/bm_GEO"
+project.dir <- "."
 
-exprMat.fp <- file.path(project.dir, "data/GSE99095_normalizedExpression.csv")
+exprMat.fp <- file.path(project.dir, "raw/GSE99095_normalizedExpression.csv")
 
 
 #==================
@@ -34,12 +49,14 @@ stopifnot(identical(pdata$title, colnames(exprMat)))
 cellInfo <- pdata
 cellInfo$nGene <- colSums(exprMat>0)
 
-save(exprMat, cellInfo, file = "../bm_GEO/processed.rdata")
+dir.create("processed")
+save(exprMat, cellInfo, file = "processed/processed.rdata")
 
+```
 
-#==============
 #download human transcription factor database
-#==============
+
+```{r}
 
 setwd(project.dir)
 dir.create("cisTarget_databases"); setwd("cisTarget_databases") # if needed
@@ -53,3 +70,6 @@ for(featherURL in dbFiles)
   descrURL <- gsub(".feather$", ".descr", featherURL)
   if(file.exists(descrURL)) download.file(descrURL, destfile=basename(descrURL))
 }
+
+```
+
