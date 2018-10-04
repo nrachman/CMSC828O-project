@@ -1,14 +1,29 @@
+---
+title: "processing"
+author: "Nicholas Rachmaninoff"
+date: "10/4/2018"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = normalizePath("../../bm_GEO/"))
+```
+
+```{r}
 #==================
+suppressPackageStartupMessages({
 library(data.table)
 library(GEOquery)
 library(dplyr)
+})
 #==================
 #config
 #==================
 #output directory
-project.dir <- "/hpcdata/sg/sg_data/users/rachmaninoffn2/CMSC828O/bm_GEO"
+project.dir <- "."
 
-exprMat.fp <- file.path(project.dir, "data/GSE99095_normalizedExpression.csv")
+exprMat.fp <- file.path(project.dir, "raw/GSE99095_normalizedExpression.csv")
 
 
 #==================
@@ -17,7 +32,23 @@ exprMat.fp <- file.path(project.dir, "data/GSE99095_normalizedExpression.csv")
 exprMat <- fread(exprMat.fp, data.table = FALSE)
 rownames(exprMat) <- exprMat$V1
 exprMat <- exprMat[, -1]
+```
+#Change the ennsembl ID's to gene symbols
 
+```{r}
+source("../CMSC828O-project/util/entrezToSymbol.R")
+gene.symbols <- entrezToSymbol(rownames(exprMat))
+
+gene.symbols <- gene.symbols %>% filter(hgnc_symbol != "")
+gene.symbols <- gene.symbols %>% filter(ensembl_gene_id %in% rownames(exprMat))
+
+exprMat <- exprMat[match(gene.symbols$ensembl_gene_id, rownames(exprMat)), ]
+stopifnot(identical(gene.symbols$ensembl_gene_id, rownames(exprMat)))
+rownames(exprMat) <- gene.symbols$ensembl_gene_id
+```
+
+#Make the metadata (cellInfo)
+```{r}
 #meta <- fread(meta.fp, data.table = FALSE, skip = 12)
 gse <- getGEO('GSE99095',GSEMatrix=TRUE)
 
@@ -34,12 +65,14 @@ stopifnot(identical(pdata$title, colnames(exprMat)))
 cellInfo <- pdata
 cellInfo$nGene <- colSums(exprMat>0)
 
-save(exprMat, cellInfo, file = "../bm_GEO/processed.rdata")
+dir.create("processed")
+save(exprMat, cellInfo, file = "processed/processed.rdata")
 
+```
 
-#==============
 #download human transcription factor database
-#==============
+
+```{r}
 
 setwd(project.dir)
 dir.create("cisTarget_databases"); setwd("cisTarget_databases") # if needed
@@ -53,3 +86,6 @@ for(featherURL in dbFiles)
   descrURL <- gsub(".feather$", ".descr", featherURL)
   if(file.exists(descrURL)) download.file(descrURL, destfile=basename(descrURL))
 }
+
+```
+
