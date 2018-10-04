@@ -44,7 +44,7 @@ gene.symbols <- gene.symbols %>% filter(ensembl_gene_id %in% rownames(exprMat))
 
 exprMat <- exprMat[match(gene.symbols$ensembl_gene_id, rownames(exprMat)), ]
 stopifnot(identical(gene.symbols$ensembl_gene_id, rownames(exprMat)))
-rownames(exprMat) <- gene.symbols$ensembl_gene_id
+rownames(exprMat) <- gene.symbols$hgnc_symbol
 ```
 
 #Make the metadata (cellInfo)
