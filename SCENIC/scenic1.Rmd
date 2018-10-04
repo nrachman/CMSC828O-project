@@ -172,8 +172,8 @@ To proceed with these filtering, we will first calculate some basic statistics o
 #They have already centered all of the gene expression data so it is hard to know what is not expressed
 
 ```{r}
-# sd.gene <- apply(as.matrix(exprMat), 1, sd)
-# range.gene <- apply(as.matrix(exprMat), 1, max) - apply(as.matrix(exprMat), 2, min)
+sd.gene <- apply(as.matrix(exprMat), 1, sd)
+range.gene <- apply(as.matrix(exprMat), 1, max) - apply(as.matrix(exprMat), 1, min)
 ```
 
 ```{r}
