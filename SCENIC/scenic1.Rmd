@@ -29,7 +29,7 @@ suppressPackageStartupMessages({
   library(SingleCellExperiment)
 })
 
-knitr::opts_knit$set(root.dir = normalizePath("../bm_GEO/scenic_out/"))
+knitr::opts_knit$set(root.dir = normalizePath("../../bm_GEO/scenic_out/"))
 ```
 
 ###check that wd is correct
@@ -63,10 +63,6 @@ To start this tutorial you should have read the "Introduction and setup" vignett
 # Directories
 During this workflow we will save multiple files. To keep them tidy, we recommend to set the working directory to a new folder. 
 
-```{r}
-getwd()
-```
-
 By default, the intermediate files and plots will be saved into the `int` folder, with a numbered prefix to keep them in order. You may use these files to check details about each step, or re-run parts of the analysis with different settings.
 The main output (i.e. plots, HTML reports,... ) will be saved into the `output` folder.
 
@@ -92,8 +88,6 @@ load("/hpcdata/sg/sg_data/users/rachmaninoffn2/CMSC828O/bm_GEO/processed/process
 
 ## Cell info
 In Step 3-4 (scoring the GRN and clustering), you can plot some information about the cells on the heatmaps or t-SNE. You can choose which variables from the phenodata to plot, and assign them a specific color (otherwise one will be assigned automatically):
-
-
 
 ```{r cellInfo, fig.height=4, fig.width=4}
 #head(cellInfo)
@@ -178,12 +172,12 @@ To proceed with these filtering, we will first calculate some basic statistics o
 #They have already centered all of the gene expression data so it is hard to know what is not expressed
 
 ```{r}
-sd.gene <- apply(as.matrix(exprMat), 2, sd)
-range.gene <- apply(as.matrix(exprMat), 2, max) - apply(as.matrix(exprMat), 2, min)
-
-plot(sd.gene, range.gene)
+# sd.gene <- apply(as.matrix(exprMat), 1, sd)
+# range.gene <- apply(as.matrix(exprMat), 1, max) - apply(as.matrix(exprMat), 2, min)
 ```
+
 ```{r}
+plot(sd.gene, range.gene)
 hist(sd.gene)
 ```
 
@@ -210,27 +204,23 @@ genesLeft_minReads <- rownames(exprMat)
 length(genesLeft_minReads)
 ```
 
-```{r}
-library('biomaRt')
-mart <- useDataset("hsapiens_gene_ensembl", useMart("ensembl"))
-genes <- df$genes
-df$id <- NA
-G_list <- getBM(filters= "ensembl_gene_id", attributes= c("ensembl_gene_id",
-"entrezgene", "description"),values=genes,mart= mart)
-```
-
 
 **Second filter:** Keep the genes that are detected in at least 1% of the cells. This filtering is meant to remove genes whose reads come from one a few 'noisy' cells. To avoid removing small (but potentially interesting) cell populations, we recommend to set a percentage lower than the smallest population of cells to be detected. 
 
 ```{r filter2}
-minSamples <- ncol(exprMat)*.01
-nCellsPerGene2 <- nCellsPerGene[genesLeft_minReads]
-genesLeft_minCells <- names(nCellsPerGene2)[which(nCellsPerGene2 > minSamples)]
+# minSamples <- ncol(exprMat)*.01
+# nCellsPerGene2 <- nCellsPerGene[genesLeft_minReads]
+# genesLeft_minCells <- names(nCellsPerGene2)[which(nCellsPerGene2 > minSamples)]
+genesLeft_minCells <- rownames(exprMat)
 length(genesLeft_minCells)
 ```
 
 **Genes in databases:**  *(Added 31 march 2017)*
 In upcoming steps (e.g. motif enrichment analysis), only the genes that are available on RcisTarget databases will be used. To save some running time for GENIE3/GRNBoost, we can ignore the genes that are not in the databases.
+
+```{r}
+getwd()
+```
 
 Load corresponding databases:
 ```{r LoadDbs}

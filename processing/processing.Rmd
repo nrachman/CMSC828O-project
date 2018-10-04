@@ -7,7 +7,7 @@ output: github_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_knit$set(root.dir = normalizePath("../bm_GEO/"))
+knitr::opts_knit$set(root.dir = normalizePath("../../bm_GEO/"))
 ```
 
 ```{r}
@@ -32,7 +32,23 @@ exprMat.fp <- file.path(project.dir, "raw/GSE99095_normalizedExpression.csv")
 exprMat <- fread(exprMat.fp, data.table = FALSE)
 rownames(exprMat) <- exprMat$V1
 exprMat <- exprMat[, -1]
+```
+#Change the ennsembl ID's to gene symbols
 
+```{r}
+source("../CMSC828O-project/util/entrezToSymbol.R")
+gene.symbols <- entrezToSymbol(rownames(exprMat))
+
+gene.symbols <- gene.symbols %>% filter(hgnc_symbol != "")
+gene.symbols <- gene.symbols %>% filter(ensembl_gene_id %in% rownames(exprMat))
+
+exprMat <- exprMat[match(gene.symbols$ensembl_gene_id, rownames(exprMat)), ]
+stopifnot(identical(gene.symbols$ensembl_gene_id, rownames(exprMat)))
+rownames(exprMat) <- gene.symbols$ensembl_gene_id
+```
+
+#Make the metadata (cellInfo)
+```{r}
 #meta <- fread(meta.fp, data.table = FALSE, skip = 12)
 gse <- getGEO('GSE99095',GSEMatrix=TRUE)
 

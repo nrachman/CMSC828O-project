@@ -25,7 +25,27 @@ exprMat.fp <- file.path(project.dir, "raw/GSE99095_normalizedExpression.csv")
 exprMat <- fread(exprMat.fp, data.table = FALSE)
 rownames(exprMat) <- exprMat$V1
 exprMat <- exprMat[, -1]
+```
 
+Change the ennsembl ID's to gene symbols
+========================================
+
+``` r
+source("../CMSC828O-project/util/entrezToSymbol.R")
+gene.symbols <- entrezToSymbol(rownames(exprMat))
+
+gene.symbols <- gene.symbols %>% filter(hgnc_symbol != "")
+gene.symbols <- gene.symbols %>% filter(ensembl_gene_id %in% rownames(exprMat))
+
+exprMat <- exprMat[match(gene.symbols$ensembl_gene_id, rownames(exprMat)), ]
+stopifnot(identical(gene.symbols$ensembl_gene_id, rownames(exprMat)))
+rownames(exprMat) <- gene.symbols$ensembl_gene_id
+```
+
+Make the metadata (cellInfo)
+============================
+
+``` r
 #meta <- fread(meta.fp, data.table = FALSE, skip = 12)
 gse <- getGEO('GSE99095',GSEMatrix=TRUE)
 ```
@@ -43,7 +63,7 @@ gse <- getGEO('GSE99095',GSEMatrix=TRUE)
 
     ## File stored at:
 
-    ## /tmp/RtmpbEBe2k/GPL16791.soft
+    ## /tmp/RtmpI6QChQ/GPL16791.soft
 
     ## GSE99095-GPL21290_series_matrix.txt.gz
 
@@ -56,7 +76,7 @@ gse <- getGEO('GSE99095',GSEMatrix=TRUE)
 
     ## File stored at:
 
-    ## /tmp/RtmpbEBe2k/GPL21290.soft
+    ## /tmp/RtmpI6QChQ/GPL21290.soft
 
 ``` r
 #for some reason this was divided into two files with additional samples
