@@ -89,8 +89,6 @@ load("/hpcdata/sg/sg_data/users/rachmaninoffn2/CMSC828O/bm_GEO/processed/process
 ## Cell info
 In Step 3-4 (scoring the GRN and clustering), you can plot some information about the cells on the heatmaps or t-SNE. You can choose which variables from the phenodata to plot, and assign them a specific color (otherwise one will be assigned automatically):
 
-
-
 ```{r cellInfo, fig.height=4, fig.width=4}
 #head(cellInfo)
 dir.create("int")
