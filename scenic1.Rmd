@@ -11,13 +11,14 @@ output:
     toc: yes
   pdf_document:
     toc: yes
-package: '`r pkg_ver("SCENIC")`'
+
 bibliography: references.bib
 vignette: >
   %\VignetteIndexEntry{Running SCENIC} 
   %\VignetteEngine{knitr::rmarkdown} 
   %\VignetteEncoding{UTF-8}
 ---
+#package: #should be in header but creating creating problem
 
 ```{r setup, echo=FALSE, message=FALSE, warning=FALSE}
 # Suppress loading messages when building the HTML
@@ -28,8 +29,13 @@ suppressPackageStartupMessages({
   library(SingleCellExperiment)
 })
 
-# To build a personalized report, update this working directory:
-#knitr::opts_knit$set(root.dir = 'SCENIC_MouseBrain')
+knitr::opts_knit$set(root.dir = normalizePath("../bm_GEO/scenic_out/"))
+```
+
+###check that wd is correct
+
+```{r}
+getwd()
 ```
 
 # SCENIC workflow
@@ -57,16 +63,14 @@ To start this tutorial you should have read the "Introduction and setup" vignett
 # Directories
 During this workflow we will save multiple files. To keep them tidy, we recommend to set the working directory to a new folder. 
 
-For example:
-```{r setwd, results='hide', warning=FALSE, eval=FALSE}
-
-knitr::opts_knit$set(root.dir = "/hpcdata/sg/sg_data/users/rachmaninoffn2/CMSC828O/bm_GEO/scenic_out/")
-
-#`knitr::opts_knit$set(root.dir = "../bm_GEO/scenic_out/")`
+```{r}
+getwd()
 ```
 
 By default, the intermediate files and plots will be saved into the `int` folder, with a numbered prefix to keep them in order. You may use these files to check details about each step, or re-run parts of the analysis with different settings.
 The main output (i.e. plots, HTML reports,... ) will be saved into the `output` folder.
+
+
 
 # Input
 
@@ -96,11 +100,11 @@ In Step 3-4 (scoring the GRN and clustering), you can plot some information abou
 dir.create("int")
 saveRDS(cellInfo, file="int/cellInfo.Rds")
 
-# # Color to assign to the variables (same format as for NMF::aheatmap)
-# colVars <- list(CellType=setNames(c("forestgreen", "darkorange", "magenta4", "hotpink", "red3", "skyblue", "darkblue"), 
-#     c("microglia", "endothelial-mural", "astrocytes_ependymal", "oligodendrocytes", "interneurons", "pyramidal CA1", "pyramidal SS")))
-# saveRDS(colVars, file="int/colVars.Rds")
-# plot.new(); legend(0,1, fill=colVars$CellType, legend=names(colVars$CellType))
+# Color to assign to the variables (same format as for NMF::aheatmap)
+colVars <- list(CellType=setNames(c("forestgreen", "darkorange", "magenta4", "hotpink", "red3", "skyblue", "darkblue"),
+    c("microglia", "endothelial-mural", "astrocytes_ependymal", "oligodendrocytes", "interneurons", "pyramidal CA1", "pyramidal SS")))
+saveRDS(colVars, file="int/colVars.Rds")
+plot.new(); legend(0,1, fill=colVars$CellType, legend=names(colVars$CellType))
 ```
 
 # Initialize SCENIC settings
@@ -117,7 +121,7 @@ For details on the options that can be modified check the help of `?initializeSc
 ```{r chooseOrg}
 library(SCENIC)
 org="hgnc"#, or dmel
-dbDir="../bm_GEO/cisTarget_databases" # RcisTarget databases location
+dbDir="../cisTarget_databases" # RcisTarget databases location
 myDatasetTitle="SCENIC example on Mouse brain" # choose a name for your analysis
 scenicOptions <- initializeScenic(org=org, dbDir=dbDir, datasetTitle=myDatasetTitle, nCores=20) 
 
@@ -138,8 +142,8 @@ saveRDS(scenicOptions, file="int/scenicOptions.Rds")
 scenicOptions@inputDatasetInfo$cellInfo <- "int/cellInfo.Rds"
 scenicOptions@inputDatasetInfo$colVars <- "int/colVars.Rds"
 # Databases:
-# scenicOptions@settings$dbs <- setNames("mm9-tss-centered-5kb-10species.mc8nr.feather", "mm9-5kb-mc8nr")
-# scenicOptions@settings$db_mcVersion <- "v8"
+# scenicOptions@settings$dbs <- setNames("hg19-500bp-upstream-7species.mc9nr.feather" "hg19-500bp",  "hg19-tss-centered-10kb-7species.mc9nr.feather" = "hg19-tss")
+scenicOptions@settings$db_mcVersion <- "v8"
 
 # Save to use at a later time...
 saveRDS(scenicOptions, file="int/scenicOptions.Rds") 
@@ -173,25 +177,48 @@ To proceed with these filtering, we will first calculate some basic statistics o
 
 #They have already centered all of the gene expression data so it is hard to know what is not expressed
 
+```{r}
+sd.gene <- apply(as.matrix(exprMat), 2, sd)
+range.gene <- apply(as.matrix(exprMat), 2, max) - apply(as.matrix(exprMat), 2, min)
+
+plot(sd.gene, range.gene)
+```
+```{r}
+hist(sd.gene)
+```
+
+
 ```{r exprStats}
-nCellsPerGene <- apply(exprMat, 1, function(x) sum(x>0))
-nCountsPerGene <- apply(exprMat, 1, sum)
+# nCellsPerGene <- apply(exprMat, 1, function(x) sum(x>0))
+# nCountsPerGene <- apply(exprMat, 1, sum)
 ```
 
 ```{r statsSummary}
-summary(nCellsPerGene)
-summary(nCountsPerGene)
-max(exprMat)
-sum(exprMat>0) / sum(exprMat==0)
+# summary(nCellsPerGene)
+# summary(nCountsPerGene)
+# max(exprMat)
+# sum(exprMat>0) / sum(exprMat==0)
 ```
 
 **First filter:** Keep only the genes with at least `r 3*.01*ncol(exprMat)` UMI counts across all samples (e.g. the total number the gene would have, if it was expressed with a value of `3` in 1% of the cells). Adjust this value according to the dataset (it will depend on the dataset units, e.g. UMI, TPMs...).
 
 ```{r filter1}
-minReads <- 3*.01*ncol(exprMat)
-genesLeft_minReads <- names(nCountsPerGene)[which(nCountsPerGene > minReads)]
+#minReads <- 3*.01*ncol(exprMat)
+#genesLeft_minReads <- names(nCountsPerGene)[which(nCountsPerGene > minReads)]
+genesLeft_minReads <- rownames(exprMat)
+
 length(genesLeft_minReads)
 ```
+
+```{r}
+library('biomaRt')
+mart <- useDataset("hsapiens_gene_ensembl", useMart("ensembl"))
+genes <- df$genes
+df$id <- NA
+G_list <- getBM(filters= "ensembl_gene_id", attributes= c("ensembl_gene_id",
+"entrezgene", "description"),values=genes,mart= mart)
+```
+
 
 **Second filter:** Keep the genes that are detected in at least 1% of the cells. This filtering is meant to remove genes whose reads come from one a few 'noisy' cells. To avoid removing small (but potentially interesting) cell populations, we recommend to set a percentage lower than the smallest population of cells to be detected. 
 
