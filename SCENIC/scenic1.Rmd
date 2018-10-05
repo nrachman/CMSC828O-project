@@ -18,7 +18,7 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown} 
   %\VignetteEncoding{UTF-8}
 ---
-#package: #should be in header but creating creating problem
+#package: #should be in header but creating creating problem so removed
 
 ```{r setup, echo=FALSE, message=FALSE, warning=FALSE}
 # Suppress loading messages when building the HTML
@@ -238,7 +238,8 @@ length(genesLeft_minCells_inDatabases)
 Before proceeding to the network inference, check whether any known relevant genes are filtered-out (if any relevant gene is missing, double-check whether the filters are appropiate): 
 ```{r checkMissingGenes}
 # Check whether any relevant gene / potential gene of interest is missing:
-interestingGenes <- c("Neurod1", "Sox10", "Dlx1")
+# interestingGenes <- c("Neurod1", "Sox10", "Dlx1")
+interestingGenes <- c("CD8", "CD4", "CD34", "CD19")
 interestingGenes[which(!interestingGenes %in% genesLeft_minCells_inDatabases)]
 ```
 
@@ -292,10 +293,10 @@ GENIE3 will typically take several hours (or days) to run. If you are running th
 # exprMat_filtered <- exprMat[genesKept,]
 
 # Optional: add log (if it is not logged/normalized already)
-exprMat_filtered <- log2(exprMat_filtered+1) 
-
-# Run GENIE3
-runGenie3(exprMat_filtered, scenicOptions)
+# exprMat_filtered <- log2(exprMat_filtered+1) 
+# 
+# # Run GENIE3
+# runGenie3(exprMat_filtered, scenicOptions)
 ```
 
 
@@ -306,7 +307,7 @@ The input to GRNBoost is the filtered expression matrix (transposed), and a list
 
 ```{r TFlist, eval=FALSE}
 # Optional: add log (if it is not logged/normalized already)
-exprMat_filtered <- log2(exprMat_filtered+1)
+#exprMat_filtered <- log2(exprMat_filtered+1)
 
 # Save TF list and expression matrix as text
 exportsForGRNBoost(exprMat_filtered, scenicOptions)
