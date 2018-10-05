@@ -83,7 +83,7 @@ Single-cell RNA-seq expression matrix (with gene-symbol as `rownames`, see the `
 ```
 
 ```{r}
-load("/hpcdata/sg/sg_data/users/rachmaninoffn2/CMSC828O/bm_GEO/processed/processed.rdata")
+load("../processed/processed.rdata")
 ```
 
 ## Cell info
